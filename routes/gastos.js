@@ -23,15 +23,17 @@ router.get('/gastos-fijos', (req, res) => {
 
 router.post('/gastos-fijos', (req, res) => {
   const { nombre, monto, categoria_id, cuenta_id, tarjeta_id } = req.body;
+  const montoNum = monto ? parseFloat(monto) : 0;
   run('INSERT INTO gastos_fijos (nombre, monto, categoria_id, cuenta_id, tarjeta_id) VALUES (?,?,?,?,?)',
-    [nombre, parseFloat(monto), categoria_id || null, cuenta_id || null, tarjeta_id || null]);
+    [nombre, montoNum, categoria_id || null, cuenta_id || null, tarjeta_id || null]);
   res.json({ id: lastId('gastos_fijos'), ...req.body });
 });
 
 router.put('/gastos-fijos/:id', (req, res) => {
   const { nombre, monto, categoria_id, cuenta_id, tarjeta_id, activo } = req.body;
+  const montoNum = monto ? parseFloat(monto) : 0;
   run('UPDATE gastos_fijos SET nombre=?, monto=?, categoria_id=?, cuenta_id=?, tarjeta_id=?, activo=? WHERE id=?',
-    [nombre, parseFloat(monto), categoria_id || null, cuenta_id || null, tarjeta_id || null, activo ?? 1, req.params.id]);
+    [nombre, montoNum, categoria_id || null, cuenta_id || null, tarjeta_id || null, activo ?? 1, req.params.id]);
   res.json({ ok: true });
 });
 
@@ -44,37 +46,75 @@ router.delete('/gastos-fijos/:id', (req, res) => {
 router.get('/gastos-fijos-mensuales', (req, res) => {
   const { anio, mes } = req.query;
   const items = all(`
-    SELECT gfm.*, gf.nombre, gf.categoria_id, gf.cuenta_id, gf.tarjeta_id,
+    SELECT gfm.*, 
+           COALESCE(gfm.nombre, gf.nombre) as nombre, 
+           COALESCE(gfm.categoria_id, gf.categoria_id) as categoria_id, 
+           COALESCE(gfm.cuenta_id, gf.cuenta_id) as cuenta_id, 
+           COALESCE(gfm.tarjeta_id, gf.tarjeta_id) as tarjeta_id,
            c.nombre as categoria_nombre, c.icono as categoria_icono, c.color as categoria_color,
            cu.nombre as cuenta_nombre, t.nombre as tarjeta_nombre
     FROM gastos_fijos_mensuales gfm
-    JOIN gastos_fijos gf ON gfm.gasto_fijo_id = gf.id
-    LEFT JOIN categorias c ON gf.categoria_id = c.id
-    LEFT JOIN cuentas cu ON gf.cuenta_id = cu.id
-    LEFT JOIN tarjetas t ON gf.tarjeta_id = t.id
+    LEFT JOIN gastos_fijos gf ON gfm.gasto_fijo_id = gf.id
+    LEFT JOIN categorias c ON COALESCE(gfm.categoria_id, gf.categoria_id) = c.id
+    LEFT JOIN cuentas cu ON COALESCE(gfm.cuenta_id, gf.cuenta_id) = cu.id
+    LEFT JOIN tarjetas t ON COALESCE(gfm.tarjeta_id, gf.tarjeta_id) = t.id
     WHERE gfm.anio = ? AND gfm.mes = ?
-    ORDER BY gf.nombre
+    ORDER BY COALESCE(gfm.nombre, gf.nombre)
   `, [parseInt(anio), parseInt(mes)]);
   res.json(items);
 });
 
 router.post('/gastos-fijos-mensuales/cargar', (req, res) => {
-  const { anio, mes } = req.body;
-  const plantillas = all('SELECT * FROM gastos_fijos WHERE activo = 1');
+  const { anio, mes, plantillas_ids } = req.body;
+  if (!plantillas_ids || !Array.isArray(plantillas_ids) || plantillas_ids.length === 0) {
+    return res.json({ ok: true, cargados: 0 });
+  }
+
+  const inClause = plantillas_ids.map(() => '?').join(',');
+  const plantillas = all(`SELECT * FROM gastos_fijos WHERE id IN (${inClause}) AND activo = 1`, plantillas_ids);
+  
   for (const p of plantillas) {
     try {
       run('INSERT OR IGNORE INTO gastos_fijos_mensuales (gasto_fijo_id, anio, mes, monto) VALUES (?,?,?,?)',
-        [p.id, parseInt(anio), parseInt(mes), p.monto]);
+        [p.id, parseInt(anio), parseInt(mes), p.monto || 0]);
     } catch(e) { /* UNIQUE conflict, skip */ }
   }
   res.json({ ok: true, cargados: plantillas.length });
 });
 
+router.post('/gastos-fijos-mensuales/puntual', (req, res) => {
+  const { nombre, monto, categoria_id, cuenta_id, tarjeta_id, anio, mes } = req.body;
+  const montoNum = monto ? parseFloat(monto) : 0;
+  
+  run(`INSERT INTO gastos_fijos_mensuales 
+       (nombre, monto, categoria_id, cuenta_id, tarjeta_id, anio, mes) 
+       VALUES (?,?,?,?,?,?,?)`,
+    [nombre, montoNum, categoria_id || null, cuenta_id || null, tarjeta_id || null, parseInt(anio), parseInt(mes)]);
+    
+  res.json({ ok: true, id: lastId('gastos_fijos_mensuales') });
+});
+
 router.put('/gastos-fijos-mensuales/:id', (req, res) => {
-  const { monto, pagado } = req.body;
+  const { monto, pagado, nombre, categoria_id, cuenta_id, tarjeta_id } = req.body;
   const existing = get('SELECT * FROM gastos_fijos_mensuales WHERE id=?', [req.params.id]);
-  run('UPDATE gastos_fijos_mensuales SET monto=?, pagado=? WHERE id=?',
-    [monto !== undefined ? parseFloat(monto) : existing?.monto, pagado ? 1 : 0, req.params.id]);
+  if (!existing) return res.status(404).json({error: 'Not found'});
+  
+  let sql = 'UPDATE gastos_fijos_mensuales SET ';
+  let params = [];
+  let sets = [];
+  
+  if (monto !== undefined) { sets.push('monto=?'); params.push(parseFloat(monto)); }
+  if (pagado !== undefined) { sets.push('pagado=?'); params.push(pagado ? 1 : 0); }
+  if (nombre !== undefined) { sets.push('nombre=?'); params.push(nombre); }
+  if (categoria_id !== undefined) { sets.push('categoria_id=?'); params.push(categoria_id || null); }
+  if (cuenta_id !== undefined) { sets.push('cuenta_id=?'); params.push(cuenta_id || null); }
+  if (tarjeta_id !== undefined) { sets.push('tarjeta_id=?'); params.push(tarjeta_id || null); }
+  
+  if (sets.length === 0) return res.json({ok: true});
+  
+  params.push(req.params.id);
+  run(sql + sets.join(', ') + ' WHERE id=?', params);
+  
   res.json({ ok: true });
 });
 

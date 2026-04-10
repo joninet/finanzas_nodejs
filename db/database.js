@@ -110,18 +110,54 @@ function initSchema() {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
-  db.run(`
-    CREATE TABLE IF NOT EXISTS gastos_fijos_mensuales (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      gasto_fijo_id INTEGER NOT NULL,
-      anio INTEGER NOT NULL,
-      mes INTEGER NOT NULL,
-      monto REAL NOT NULL,
-      pagado INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      UNIQUE(gasto_fijo_id, anio, mes)
-    )
-  `);
+  const checkV2 = get("SELECT name FROM sqlite_master WHERE type='table' AND name='gastos_fijos_mensuales'");
+  let isV1 = false;
+  if (checkV2) {
+    const tableInfo = all("PRAGMA table_info(gastos_fijos_mensuales)");
+    isV1 = !tableInfo.some(col => col.name === 'nombre');
+  }
+
+  if (isV1) {
+    db.run(`
+      CREATE TABLE gastos_fijos_mensuales_v2 (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        gasto_fijo_id INTEGER,
+        nombre TEXT,
+        categoria_id INTEGER,
+        cuenta_id INTEGER,
+        tarjeta_id INTEGER,
+        anio INTEGER NOT NULL,
+        mes INTEGER NOT NULL,
+        monto REAL NOT NULL,
+        pagado INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+    db.run(`
+      INSERT INTO gastos_fijos_mensuales_v2 (id, gasto_fijo_id, anio, mes, monto, pagado, created_at)
+      SELECT id, gasto_fijo_id, anio, mes, monto, pagado, created_at FROM gastos_fijos_mensuales
+    `);
+    db.run(`DROP TABLE gastos_fijos_mensuales`);
+    db.run(`ALTER TABLE gastos_fijos_mensuales_v2 RENAME TO gastos_fijos_mensuales`);
+    db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_gfm_unique ON gastos_fijos_mensuales (gasto_fijo_id, anio, mes)`);
+  } else {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS gastos_fijos_mensuales (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        gasto_fijo_id INTEGER,
+        nombre TEXT,
+        categoria_id INTEGER,
+        cuenta_id INTEGER,
+        tarjeta_id INTEGER,
+        anio INTEGER NOT NULL,
+        mes INTEGER NOT NULL,
+        monto REAL NOT NULL,
+        pagado INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+    db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_gfm_unique ON gastos_fijos_mensuales (gasto_fijo_id, anio, mes)`);
+  }
   db.run(`
     CREATE TABLE IF NOT EXISTS transacciones (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
