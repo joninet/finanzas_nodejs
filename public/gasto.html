@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Carga Rápida · Gastos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body { padding: 16px; display: flex; flex-direction: column; align-items: center; }
+    .mobile-header { 
+      width: 100%; max-width: 480px; display: flex; justify-content: space-between; 
+      align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    }
+    .mobile-title { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; }
+    .form-container { width: 100%; max-width: 480px; background: var(--bg2); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    /* Estilos extra para botones rápidos en mobile */
+    .btn-super { padding: 16px; font-size: 1.1rem; width: 100%; justify-content: center; }
+    .success-overlay {
+      position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; 
+      align-items: center; justify-content: center; z-index: 1000;
+    }
+    .success-overlay.show { display: flex; animation: fadein 0.3s forwards; }
+    @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+    .check-icon { font-size: 6rem; color: var(--accent); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <div class="mobile-header">
+    <div class="logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">Gastos</span>
+    </div>
+    <div style="display:flex; gap: 12px; align-items: center;">
+      <a href="/" class="btn-icon" title="Volver al inicio" style="font-size: 1.2rem;">🏠</a>
+      <button class="btn-icon" id="themeToggle" style="font-size: 1.2rem;" title="Cambiar tema">🌞</button>
+    </div>
+  </div>
+
+  <div class="form-container">
+    <h2 class="section-title" style="margin-bottom: 20px; font-size: 0.9rem;">Carga Rápida</h2>
+    
+    <form id="frmRapido">
+      <div class="form-group">
+        <div class="chip-group" id="tipoChips">
+          <button type="button" class="chip active" data-tipo="gasto" onclick="selectTipo('gasto')">Gasto</button>
+          <button type="button" class="chip" data-tipo="ingreso" onclick="selectTipo('ingreso')">Ingreso</button>
+        </div>
+        <input type="hidden" name="tipo" id="inputTipo" value="gasto">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descripción *</label>
+        <input name="descripcion" required placeholder="¿En qué gastaste?" autofocus />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Monto *</label>
+          <input name="monto" type="number" step="0.01" min="0" required placeholder="$ 0.00" style="font-size: 1.3rem; font-weight: bold; font-family: var(--font-display); color: var(--text);" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input name="fecha" type="date" id="inputFecha" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <div id="catContainer">Cargando...</div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-title">Medio de Pago</div>
+
+      <div class="chip-group" id="pagoChips" style="margin-bottom:14px">
+        <button type="button" class="chip active" data-pago="cuenta" onclick="selectPago('cuenta')">Cuenta</button>
+        <button type="button" class="chip" data-pago="tarjeta" onclick="selectPago('tarjeta')">Tarjeta</button>
+        <button type="button" class="chip" data-pago="efectivo" onclick="selectPago('efectivo')">Efectivo</button>
+      </div>
+
+      <div id="pagosCuenta" class="form-group">
+        <label class="form-label">Cuenta Bancaria/Billetera</label>
+        <div id="cuentaContainer">Cargando...</div>
+      </div>
+
+      <div id="pagosTarjeta" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Tarjeta de Crédito</label>
+          <div id="tarjetaContainer">Cargando...</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Cuotas</label>
+            <select name="cuotas" id="selectCuotas" onchange="toggleCuotaFecha()">
+              <option value="1">1 cuota</option><option value="2">2 cuotas</option>
+              <option value="3">3 cuotas</option><option value="6">6 cuotas</option>
+              <option value="9">9 cuotas</option><option value="12">12 cuotas</option>
+              <option value="18">18 cuotas</option><option value="24">24 cuotas</option>
+            </select>
+          </div>
+          <div class="form-group" id="cuotaFechaGroup" style="display:none">
+            <label class="form-label">Mes 1ª cuota</label>
+            <select name="mes_primera_cuota" id="mesPrimeraCuota"></select>
+          </div>
+        </div>
+        <div class="form-group" id="cuotaAnioGroup" style="display:none">
+          <label class="form-label">Año 1ª cuota</label>
+          <input name="anio_primera_cuota" type="number" id="anioPrimeraCuota" min="2020" max="2030" />
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-super" style="margin-top: 10px;">✚ Guardar</button>
+    </form>
+  </div>
+
+  <div class="success-overlay" id="successOverlay">
+    <div class="check-icon">✔</div>
+    <h1 style="font-family: var(--font-display); margin-bottom: 10px;">¡Guardado!</h1>
+    <p style="color: var(--text2); margin-bottom: 30px;">Transacción registrada con éxito.</p>
+    <button class="btn btn-primary" onclick="resetForm()" style="padding: 12px 24px; font-size: 1.1rem;">Cargar otro</button>
+    <a href="/" class="btn btn-ghost" style="margin-top: 14px;">Ir al Tablero</a>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    // Inicializar fecha y selectores cuotas
+    const now = new Date();
+    document.getElementById('inputFecha').value = today();
+    document.getElementById('anioPrimeraCuota').value = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    document.getElementById('mesPrimeraCuota').innerHTML = MESES.map((m,i) => 
+      `<option value="${i+1}" ${i+1 === currentMonth ? 'selected' : ''}>${m}</option>`
+    ).join('');
+
+    // Cargar datos
+    async function initData() {
+      try {
+        const [categorias, cuentas, tarjetas] = await Promise.all([
+          API.get('/categorias'), API.get('/cuentas'), API.get('/tarjetas')
+        ]);
+        document.getElementById('catContainer').innerHTML = selectCategorias(categorias, null);
+        document.getElementById('cuentaContainer').innerHTML = selectCuentas(cuentas, null);
+        document.getElementById('tarjetaContainer').innerHTML = selectTarjetas(tarjetas, null);
+      } catch (e) {
+        toast('Error de conexión', 'error');
+      }
+    }
+    initData();
+
+    // Lógica UI
+    function selectTipo(tipo) {
+      document.getElementById('inputTipo').value = tipo;
+      document.querySelectorAll('#tipoChips .chip').forEach(c => c.classList.toggle('active', c.dataset.tipo === tipo));
+      const montoInput = document.querySelector('[name=monto]');
+      montoInput.style.color = tipo === 'ingreso' ? 'var(--accent)' : 'var(--red)';
+    }
+    // Llama al inicio para dar color rojo al input de gasto por defecto
+    selectTipo('gasto');
+
+    function selectPago(pago) {
+      document.querySelectorAll('#pagoChips .chip').forEach(c => c.classList.toggle('active', c.dataset.pago === pago));
+      document.getElementById('pagosCuenta').style.display = pago === 'cuenta' ? 'block' : 'none';
+      document.getElementById('pagosTarjeta').style.display = pago === 'tarjeta' ? 'block' : 'none';
+      
+      if (pago !== 'tarjeta') {
+        const sel = document.querySelector('[name=tarjeta_id]');
+        if (sel) sel.value = '';
+      }
+      if (pago !== 'cuenta') {
+        const sel = document.querySelector('[name=cuenta_id]');
+        if (sel) sel.value = '';
+      }
+    }
+
+    function toggleCuotaFecha() {
+      const cuotas = parseInt(document.getElementById('selectCuotas').value);
+      const show = cuotas > 1;
+      document.getElementById('cuotaFechaGroup').style.display = show ? 'block' : 'none';
+      document.getElementById('cuotaAnioGroup').style.display = show ? 'block' : 'none';
+    }
+
+    // Submit
+    document.getElementById('frmRapido').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const frm = e.target;
+      const data = getFormData(frm);
+      data.tipo = document.getElementById('inputTipo').value;
+      if (!data.cuenta_id) delete data.cuenta_id;
+      if (!data.tarjeta_id) delete data.tarjeta_id;
+      if (!data.categoria_id) delete data.categoria_id;
+      data.cuotas = data.cuotas || 1;
+
+      try {
+        await API.post('/transacciones', data);
+        document.getElementById('successOverlay').classList.add('show');
+      } catch (err) {
+        toast('Error al guardar', 'error');
+      }
+    });
+
+    function resetForm() {
+      document.getElementById('successOverlay').classList.remove('show');
+      const frm = document.getElementById('frmRapido');
+      frm.reset();
+      document.getElementById('inputFecha').value = today();
+      selectTipo('gasto');
+      selectPago('cuenta');
+      frm.querySelector('[name=descripcion]').focus();
+    }
+  </script>
+</body>
+</html>

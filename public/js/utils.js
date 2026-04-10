@@ -75,3 +75,34 @@ function cuotaLabel(t) {
   if (t.cuotas > 1) return `${t.cuotas} cuotas`;
   return '1 cuota';
 }
+
+// ── Theme (Light/Dark) ──────────────────────────────────────────
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  setTheme(savedTheme);
+  
+  const toggleBtn = document.getElementById('themeToggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      setTheme(isLight ? 'dark' : 'light');
+    });
+  }
+}
+
+function setTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('theme', 'light');
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '🌙';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('theme', 'dark');
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '🌞';
+  }
+}
+
+// Inicializar el tema al cargar
+initTheme();

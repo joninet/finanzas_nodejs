@@ -13,6 +13,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api', require('./routes/config'));
 app.use('/api', require('./routes/gastos'));
 
+// Gasto mobile standalone
+app.get('/gasto', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'gasto.html'));
+});
+
 // SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
