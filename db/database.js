@@ -185,6 +185,25 @@ function initSchema() {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS tareas_limpieza (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL,
+      dia_semana INTEGER NOT NULL,
+      encargados_posibles TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS tareas_asignadas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tarea_id INTEGER NOT NULL,
+      fecha TEXT NOT NULL,
+      persona_asignada TEXT NOT NULL,
+      completado INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
 
   // Seed categorías
   const count = get('SELECT COUNT(*) as n FROM categorias');

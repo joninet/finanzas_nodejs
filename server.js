@@ -12,6 +12,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 app.use('/api', require('./routes/config'));
 app.use('/api', require('./routes/gastos'));
+app.use('/api', require('./routes/limpieza'));
 
 // Gasto mobile standalone
 app.get('/gasto', (req, res) => {

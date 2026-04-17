@@ -12,7 +12,8 @@ const PAGE_TITLES = {
   'gastos-fijos': 'Gastos Fijos',
   'cuentas': 'Cuentas',
   'tarjetas': 'Tarjetas',
-  'categorias': 'Categorías'
+  'categorias': 'Categorías',
+  'limpieza': 'Limpieza'
 };
 
 const PAGE_RENDERERS = {
@@ -21,7 +22,8 @@ const PAGE_RENDERERS = {
   'gastos-fijos': renderGastosFijos,
   'cuentas': renderCuentas,
   'tarjetas': renderTarjetas,
-  'categorias': renderCategorias
+  'categorias': renderCategorias,
+  'limpieza': renderLimpieza
 };
 
 // ── Navegación ─────────────────────────────────────────────────
