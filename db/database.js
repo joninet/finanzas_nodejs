@@ -204,6 +204,16 @@ function initSchema() {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS suscripciones_push (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      usuario TEXT NOT NULL,
+      endpoint TEXT NOT NULL,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
 
   // Seed categorías
   const count = get('SELECT COUNT(*) as n FROM categorias');

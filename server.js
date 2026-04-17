@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -13,6 +14,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api', require('./routes/config'));
 app.use('/api', require('./routes/gastos'));
 app.use('/api', require('./routes/limpieza'));
+const { pushRouter } = require('./routes/push');
+app.use('/api', pushRouter);
+
+// Inicializar CronJobs
+require('./push-cron');
 
 // Gasto mobile standalone
 app.get('/gasto', (req, res) => {
