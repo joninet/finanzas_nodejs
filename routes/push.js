@@ -4,11 +4,15 @@ const webpush = require('web-push');
 const { getDb, run } = require('../db/database');
 
 // Configuración requerida por web-push (usará el correo como contacto en caso de fallos)
-webpush.setVapidDetails(
-  'mailto:ejemplo@finanzas.local',
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    'mailto:ejemplo@finanzas.local',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+} else {
+  console.warn('⚠️ ADVERTENCIA: VAPID_PUBLIC_KEY o VAPID_PRIVATE_KEY no están configurados en las variables de entorno. Las notificaciones Push no funcionarán.');
+}
 
 router.use(async (req, res, next) => {
   try { await getDb(); next(); } catch(e) { res.status(500).json({ error: e.message }); }
