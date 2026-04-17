@@ -47,3 +47,11 @@ self.addEventListener('notificationclick', function(event) {
     })
   );
 });
+
+// Listener "fetch" obligatorio para que navegadores móviles como Brave y Chrome habiliten
+// la instalación de la aplicación como PWA ("Añadir a pantalla de inicio").
+self.addEventListener('fetch', function(event) {
+  // Por ahora lo dejamos vacío para que siempre recoja los datos en vivo.
+  // Es suficiente con declararlo explícitamente.
+});
+
