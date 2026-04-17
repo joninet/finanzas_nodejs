@@ -13,16 +13,16 @@ router.get('/limpieza/tareas', (req, res) => {
 });
 
 router.post('/limpieza/tareas', (req, res) => {
-  const { nombre, dia_semana, encargados_posibles } = req.body;
-  run('INSERT INTO tareas_limpieza (nombre, dia_semana, encargados_posibles) VALUES (?, ?, ?)',
-    [nombre, dia_semana, encargados_posibles]);
+  const { nombre, dia_semana, encargados_posibles, descripcion } = req.body;
+  run('INSERT INTO tareas_limpieza (nombre, dia_semana, encargados_posibles, descripcion) VALUES (?, ?, ?, ?)',
+    [nombre, dia_semana, encargados_posibles, descripcion || '']);
   res.json({ id: lastId('tareas_limpieza'), ok: true });
 });
 
 router.put('/limpieza/tareas/:id', (req, res) => {
-  const { nombre, dia_semana, encargados_posibles } = req.body;
-  run('UPDATE tareas_limpieza SET nombre=?, dia_semana=?, encargados_posibles=? WHERE id=?',
-    [nombre, dia_semana, encargados_posibles, req.params.id]);
+  const { nombre, dia_semana, encargados_posibles, descripcion } = req.body;
+  run('UPDATE tareas_limpieza SET nombre=?, dia_semana=?, encargados_posibles=?, descripcion=? WHERE id=?',
+    [nombre, dia_semana, encargados_posibles, descripcion || '', req.params.id]);
   res.json({ ok: true });
 });
 
@@ -45,7 +45,7 @@ router.get('/limpieza/asignaciones', (req, res) => {
   }
 
   const items = all(`
-    SELECT a.*, t.nombre as tarea_nombre, t.dia_semana 
+    SELECT a.*, t.nombre as tarea_nombre, t.dia_semana, t.descripcion
     FROM tareas_asignadas a
     JOIN tareas_limpieza t ON a.tarea_id = t.id
     WHERE ${where}

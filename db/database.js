@@ -191,9 +191,12 @@ function initSchema() {
       nombre TEXT NOT NULL,
       dia_semana INTEGER NOT NULL,
       encargados_posibles TEXT NOT NULL,
+      descripcion TEXT DEFAULT '',
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+  // Migración para tabla existente
+  try { db.run('ALTER TABLE tareas_limpieza ADD COLUMN descripcion TEXT DEFAULT ""'); } catch(e) {}
   db.run(`
     CREATE TABLE IF NOT EXISTS tareas_asignadas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

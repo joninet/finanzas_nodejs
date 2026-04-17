@@ -100,6 +100,7 @@ async function renderLimpieza(anio, mes) {
                 <div class="item-info">
                   <div class="item-name">${t.tarea_nombre}</div>
                   <div class="item-sub" style="font-weight: bold; color: var(--accent);">${t.persona_asignada}</div>
+                  ${t.descripcion ? `<div style="font-size: 0.75rem; color: var(--text3); margin-top: 4px; line-height: 1.2;">↳ ${t.descripcion}</div>` : ''}
                 </div>
                 <div class="item-actions">
                   <input type="checkbox" ${t.completado ? 'checked' : ''} onchange="toggleCompletado(${t.id}, this.checked)" style="width: 16px; height: 16px;">
@@ -196,6 +197,10 @@ function abrirConfigTareas() {
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label">Descripción o Pasos (Opcional)</label>
+        <textarea id="limpDesc" placeholder="Ej. 1. Barrer  2. Trapear..." style="width: 100%; min-height: 50px; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: var(--radius); font-family: var(--font-body);"></textarea>
+      </div>
+      <div class="form-group">
         <label class="form-label">Posibles Encargados</label>
         <div class="chip-group" id="limpChips">
           ${POSIBLES.map(p => `<button type="button" class="chip active" data-val="${p}">${p}</button>`).join('')}
@@ -215,6 +220,7 @@ function abrirConfigTareas() {
             <div class="item-info">
               <div class="item-name">${t.nombre}</div>
               <div class="item-sub">Día: <b>${d}</b> | Por: ${t.encargados_posibles}</div>
+              ${t.descripcion ? `<div style="font-size: 0.75rem; color: var(--text3); margin-top: 4px; line-height: 1.2;">↳ ${t.descripcion}</div>` : ''}
             </div>
             <div class="item-actions">
               <button class="btn-icon" style="color:var(--red)" onclick="borrarTareaBase(${t.id})">🗑️</button>
@@ -236,6 +242,7 @@ function abrirConfigTareas() {
 
 async function guardarTareaBase() {
   const nombre = document.getElementById('limpNombre').value.trim();
+  const descripcion = document.getElementById('limpDesc').value.trim();
   const dia_semana = document.getElementById('limpDia').value;
   const actives = Array.from(document.querySelectorAll('#limpChips .chip.active')).map(el => el.dataset.val);
   
@@ -244,7 +251,7 @@ async function guardarTareaBase() {
   
   try {
     const res = await API.post('/limpieza/tareas', {
-      nombre, dia_semana, encargados_posibles: actives.join(',')
+      nombre, dia_semana, encargados_posibles: actives.join(','), descripcion
     });
 
     if (res.ok) {
